@@ -1,37 +1,32 @@
 import { createClient } from '@supabase/supabase-js';
 import SearchForm from '@/components/SearchForm';
 
-// ここです！ import の直後、関数の外側に記述します
+// 設定は一度だけ記述
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-
-
-// 1. Supabaseクライアントの初期化
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
-
 
 interface Props {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function TennisTipsPage({ searchParams }: Props) {
-  // 2. 検索パラメータの取得
   const sParams = await searchParams;
   const q = typeof sParams.q === 'string' ? sParams.q : undefined;
   const level = typeof sParams.level === 'string' ? sParams.level : undefined;
   const category = typeof sParams.category === 'string' ? sParams.category : undefined;
 
-  // 3. Supabase クエリ構築
+  // --- クエリの修正箇所 ---
+  // テーブル名を 'tennis_tips' から 'hints' に変更しました
   let query = supabase
-    .from('tennis_tips')
+    .from('hints') 
     .select('*', { count: 'exact' });
 
-  // 4. UIの分岐に合わせた検索ロジック
-  // キーワード(q)がある場合はキーワード検索を優先、ない場合は条件検索を適用
+  // キーワード(q)がある場合はキーワード検索を優先
   if (q) {
     query = query.or(`problem.ilike.%${q}%,hint.ilike.%${q}%`);
   } else {
@@ -43,7 +38,7 @@ export default async function TennisTipsPage({ searchParams }: Props) {
     }
   }
 
-  // ソートと取得範囲の設定（とりあえず最初の100件を表示）
+  // ソートと取得範囲（ID順に100件）
   query = query.order('id', { ascending: true }).range(0, 99);
 
   const { data: tips, count, error } = await query;
@@ -55,7 +50,6 @@ export default async function TennisTipsPage({ searchParams }: Props) {
   return (
     <div className="min-h-screen bg-slate-50/50">
       <div className="max-w-6xl mx-auto p-4 md:p-8">
-        {/* ヘッダーセクション */}
         <header className="mb-10 text-center">
           <h1 className="text-4xl font-extrabold text-slate-900 mb-3 tracking-tight">
             テニス上達の知恵袋
@@ -65,7 +59,6 @@ export default async function TennisTipsPage({ searchParams }: Props) {
           </p>
         </header>
 
-        {/* 検索・フィルタフォーム */}
         <div className="mb-12">
           <SearchForm initialParams={{ q, level, category }} />
         </div>
@@ -80,7 +73,7 @@ export default async function TennisTipsPage({ searchParams }: Props) {
           </div>
         </div>
 
-        {/* メインの結果表示（カード形式） */}
+        {/* カード形式のリスト表示 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {tips?.map((tip) => (
             <article 
@@ -105,28 +98,21 @@ export default async function TennisTipsPage({ searchParams }: Props) {
               </h3>
               
               <div className="mt-auto pt-5 border-t border-slate-50">
-                <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap">
-                  <span className="font-bold text-amber-500 block mb-1 text-xs">💡 ADVICE</span>
+                <div className="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap">
+                  <span className="font-bold text-amber-500 block mb-1 text-xs uppercase tracking-wider">💡 Advice</span>
                   {tip.hint}
-                </p>
+                </div>
               </div>
             </article>
           ))}
         </div>
 
         {/* 0件ヒット時の表示 */}
-        {tips?.length === 0 && (
+        {(!tips || tips.length === 0) && (
           <div className="text-center py-32 bg-white border border-dashed border-slate-300 rounded-3xl">
             <div className="text-4xl mb-4">🔍</div>
             <p className="text-slate-500 font-medium">条件に一致するヒントが見つかりませんでした。</p>
             <p className="text-slate-400 text-sm mt-2">キーワードを変えるか、別のカテゴリーを試してみてください。</p>
-          </div>
-        )}
-
-        {/* フッター（件数が多い場合の注釈） */}
-        {count && count > 100 && (
-          <div className="mt-12 text-center text-slate-400 text-sm">
-            表示されているのは最新の100件です。
           </div>
         )}
       </div>
