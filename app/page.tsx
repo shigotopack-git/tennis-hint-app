@@ -1,6 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 import SearchForm from '@/components/SearchForm';
 
+// ここです！ import の直後、関数の外側に記述します
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+
+
 // 1. Supabaseクライアントの初期化
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
