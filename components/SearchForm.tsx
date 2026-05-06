@@ -121,6 +121,7 @@ export default function SearchForm({ initialParams }: { initialParams: any }) {
                 </optgroup>
                 <optgroup label="戦略・メンタル・ケア">
                   <option value="試合展開">試合展開</option>
+                  <option value="試合展開ダブルス">試合展開（ダブルス）</option>
                   <option value="試合心構え">試合心構え</option>
                   <option value="フィジカルケア">フィジカルケア</option>
                 </optgroup>
