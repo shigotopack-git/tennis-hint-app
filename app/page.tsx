@@ -1,47 +1,43 @@
-import { createClient } from '@supabase/supabase-js'; // 必要に応じて適切なパスに変更
-import SearchForm from '@/components/SearchForm'; // 後述のコンポーネント
+import { createClient } from '@supabase/supabase-js';
+import SearchForm from '@/components/SearchForm';
 
-// Supabaseクライアントの初期化 (環境変数は適宜設定してください)
+// Supabaseクライアントの初期化
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
 interface Props {
-  searchParams: {
-    q?: string;
-    level?: string;
-    category?: string;
-  };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function TennisTipsPage({ searchParams }: Props) {
-  const { q, level, category } = searchParams;
+  // Next.js 15以降のApp Routerの仕様に合わせて await を追加
+  const sParams = await searchParams;
+  const q = typeof sParams.q === 'string' ? sParams.q : undefined;
+  const level = typeof sParams.level === 'string' ? sParams.level : undefined;
+  const category = typeof sParams.category === 'string' ? sParams.category : undefined;
 
   // --- Supabase クエリ構築 ---
   let query = supabase
-    .from('tennis_tips') // テーブル名に合わせて変更してください
+    .from('tennis_tips')
     .select('*', { count: 'exact' });
 
-  // カテゴリ絞り込み
   if (category && category !== 'all') {
     query = query.eq('category', category);
   }
 
-  // レベル絞り込み
   if (level && level !== 'all') {
     query = query.eq('level', level);
   }
 
-  // キーワード検索 (problem または hint に含まれる場合)
   if (q) {
     query = query.or(`problem.ilike.%${q}%,hint.ilike.%${q}%`);
   }
 
-  // 最新順またはLevel順にソート（必要に応じて）
-  query = query.order('id', { ascending: true }).range(0, 50); // 最初は50件表示
+  query = query.order('id', { ascending: true }).range(0, 50);
 
-  const { data: tips, error, count } = await query;
+  const { data: tips, count } = await query;
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-8">
@@ -50,17 +46,14 @@ export default async function TennisTipsPage({ searchParams }: Props) {
         <p className="text-slate-600">1,000件の課題解決リストから自分に合ったヒントを探す</p>
       </header>
 
-      {/* 検索・フィルタフォーム (Client Component) */}
       <div className="mb-10">
         <SearchForm initialParams={{ q, level, category }} />
       </div>
 
-      {/* 結果表示件数 */}
       <div className="mb-4 text-sm text-slate-500">
         検索結果: <span className="font-bold text-slate-800">{count ?? 0}</span> 件
       </div>
 
-      {/* カード形式のリスト */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {tips?.map((tip) => (
           <div key={tip.id} className="flex flex-col bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-shadow p-5">
@@ -97,5 +90,4 @@ export default async function TennisTipsPage({ searchParams }: Props) {
       )}
     </div>
   );
-}
 }
