@@ -13,8 +13,6 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-// 動的レンダリングを強制（検索結果を常に最新にするため）
-export const dynamic = 'force-dynamic';
 
 interface Props {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
