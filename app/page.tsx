@@ -20,16 +20,18 @@ export default async function TennisTipsPage({ searchParams }: Props) {
   const level = typeof sParams.level === 'string' ? sParams.level : undefined;
   const category = typeof sParams.category === 'string' ? sParams.category : undefined;
 
-  // --- クエリの修正箇所 ---
-  // テーブル名を 'tennis_tips' から 'hints' に変更しました
+// --- クエリの構築開始 ---
   let query = supabase
     .from('hints') 
     .select('*', { count: 'exact' });
 
-  // キーワード(q)がある場合はキーワード検索を優先
+  // キーワード(q)がある場合
   if (q) {
-    query = query.or(`problem.ilike.%${q}%,hint.ilike.%${q}%`);
+    // problem, hint, category のどれかに含まれているか（大文字小文字区別なし）
+    // ilike.%キーワード% とすることで「あいまい一致」になります
+    query = query.or(`problem.ilike.%${q}%,hint.ilike.%${q}%,category.ilike.%${q}%`);
   } else {
+    // キーワードがない場合のみ、カテゴリーやレベルの絞り込みを適用
     if (category && category !== 'all') {
       query = query.eq('category', category);
     }
