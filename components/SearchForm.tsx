@@ -6,15 +6,15 @@ import { useState, useEffect } from 'react';
 export default function SearchForm({ initialParams }: { initialParams: any }) {
   const router = useRouter();
   
-  // 現在どちらのタブが選択されているか（キーワードがある場合はキーワードタブを初期値にする）
+  // 初期タブの決定：キーワードがあればキーワードタブ、なければ条件絞り込みタブ
   const [activeTab, setActiveTab] = useState(initialParams.q ? 'keyword' : 'filter');
 
-  // 各入力値の状態管理
+  // 入力値の状態管理
   const [q, setQ] = useState(initialParams.q || '');
   const [level, setLevel] = useState(initialParams.level || 'all');
   const [category, setCategory] = useState(initialParams.category || 'all');
 
-  // URLのパラメータが変わったときに、フォーム内の値を同期させる（戻るボタン対策）
+  // URLパラメータとフォームの値を同期（ブラウザの戻るボタン対策）
   useEffect(() => {
     setQ(initialParams.q || '');
     setLevel(initialParams.level || 'all');
@@ -26,10 +26,10 @@ export default function SearchForm({ initialParams }: { initialParams: any }) {
     const params = new URLSearchParams();
 
     if (activeTab === 'keyword') {
-      // キーワード検索モード：キーワードがある場合のみセット（フィルタはリセット）
+      // キーワード検索モード
       if (q) params.set('q', q);
     } else {
-      // 条件絞り込みモード：レベルとカテゴリをセット（キーワードはリセット）
+      // 条件絞り込みモード
       if (level !== 'all') params.set('level', level);
       if (category !== 'all') params.set('category', category);
     }
@@ -37,16 +37,14 @@ export default function SearchForm({ initialParams }: { initialParams: any }) {
     const queryString = params.toString();
     const targetUrl = `?${queryString}`;
 
-    // URLを更新
-    router.push(targetUrl);
-    
-    // 【重要】サーバーコンポーネント(page.tsx)にデータの再取得を強制させ、画面を更新する
-    router.refresh();
+    // 【重要】router.pushではなくwindow.location.hrefを使うことで
+    // ブラウザにページ全体を再読み込みさせ、確実に最新の検索結果を表示させます。
+    window.location.href = targetUrl;
   };
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-      {/* タブ切り替えヘッダー */}
+      {/* タブ切り替え */}
       <div className="flex border-b border-slate-100 bg-slate-50/50">
         <button
           type="button"
@@ -72,15 +70,14 @@ export default function SearchForm({ initialParams }: { initialParams: any }) {
         </button>
       </div>
 
-      {/* フォーム本体 */}
+      {/* フォーム部分 */}
       <form onSubmit={handleSearch} className="p-6">
         {activeTab === 'keyword' ? (
-          /* キーワード検索フォーム */
           <div className="flex flex-col md:flex-row gap-3">
             <input
               type="text"
               placeholder="例：サーブ、緊張、ダブルス..."
-              className="flex-1 px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-slate-800 transition-all"
+              className="flex-1 px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-slate-800"
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
@@ -92,12 +89,11 @@ export default function SearchForm({ initialParams }: { initialParams: any }) {
             </button>
           </div>
         ) : (
-          /* 条件絞り込みフォーム */
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
-              <label className="block text-xs font-bold text-slate-400 mb-1.5 ml-1 uppercase tracking-wider">Level</label>
+              <label className="block text-xs font-bold text-slate-400 mb-1.5 ml-1 uppercase">Level</label>
               <select 
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 outline-none appearance-none cursor-pointer focus:border-blue-500 transition-colors"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 outline-none cursor-pointer"
                 value={level}
                 onChange={(e) => setLevel(e.target.value)}
               >
@@ -108,9 +104,9 @@ export default function SearchForm({ initialParams }: { initialParams: any }) {
               </select>
             </div>
             <div className="flex-[1.5]">
-              <label className="block text-xs font-bold text-slate-400 mb-1.5 ml-1 uppercase tracking-wider">Category</label>
+              <label className="block text-xs font-bold text-slate-400 mb-1.5 ml-1 uppercase">Category</label>
               <select 
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 outline-none appearance-none cursor-pointer focus:border-blue-500 transition-colors"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 outline-none cursor-pointer"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
               >
