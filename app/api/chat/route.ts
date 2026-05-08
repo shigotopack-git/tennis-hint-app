@@ -1,26 +1,33 @@
-import { google } from '@ai-sdk/google';
-import { generateText } from 'ai';
-
-export const maxDuration = 30;
-
+// route.ts (一括返却版)
 export async function POST(req: Request) {
   try {
     const { messages } = await req.json();
+    const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    const modelName = 'models/gemini-2.5-flash';
+    
+    // URLから ":streamGenerateContent" と "?alt=sse" を削除
+    const url = `https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${apiKey}`;
 
-    const result = await generateText({
-      model: google('gemini-1.5-flash'), // 最も標準的な名前に戻します
-      messages,
-      system: 'あなたはプロのテニスコーチです。具体的かつ簡潔にアドバイスしてください。',
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: messages.map((m: any) => ({
+          role: m.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: m.content }]
+        }))
+      })
     });
 
-    return new Response(JSON.stringify({ text: result.text }), {
-      headers: { 'Content-Type': 'application/json' },
+    const data = await response.json();
+    const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    // 普通のJSONとして返す
+    return new Response(JSON.stringify({ text: aiText }), {
+      headers: { 'Content-Type': 'application/json' }
     });
-  } catch (error: any) {
-    console.error('AI API Error:', error);
-    return new Response(JSON.stringify({ error: 'AIエラー' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+
+  } catch (error) {
+    return new Response(JSON.stringify({ error: 'Error' }), { status: 500 });
   }
 }
