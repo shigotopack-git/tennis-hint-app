@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     const { messages } = await req.json();
 
     const result = await generateText({
-      model: google('gemini-1.5-flash'), // 最も標準的な名前に戻します
+      model: google('gemini-1.5-flash-latest'), // latest入れた名前に戻します
       messages,
       system: 'あなたはプロのテニスコーチです。具体的かつ簡潔にアドバイスしてください。',
     });
